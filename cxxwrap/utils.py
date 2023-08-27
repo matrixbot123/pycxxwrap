@@ -10,11 +10,10 @@ from termcolor import colored
 from .load_function import load_func
 from colorama import Fore, Style, init
 from IPython.display import Markdown, display
+from .tools import default_dir
 
 
-init()
-def prompts(a):
-    display(Markdown(f'<span style="color:red">{a}</span>'))
+
 
 
 
@@ -24,6 +23,12 @@ if type(sys.stdout).__module__ == 'ipykernel.iostream' and type(sys.stdout).__na
 else:
     is_jupyter = False 
 
+init()
+def prompts(a):
+    if is_jupyter:
+        display(Markdown(f'<span style="color:red">{a}</span>'))
+    else :
+        print(a)
 
 class basic_type:
     def __init__(self, name=None):
@@ -45,15 +50,7 @@ class template_type:
 
 type_names = {}
 
-def create_dir(directory_path):
-    full_path = os.path.abspath(directory_path)
 
-    if not os.path.exists(full_path):
-        print("Creating directory:", full_path)
-        os.makedirs(full_path)
-    else:
-        print("Directory already exists:", full_path)
-    return full_path
 
 def create_type(name, alt=None, is_template=False):
     global type_names
@@ -186,24 +183,33 @@ class fcall:
         self.args_decl = args
         self.rettype = rettype
         self.lib_path = lib_path
-        # if tmp_dir() not in sys.path:
-        #     sys.path += [tmp_dir()]
-        if lib_path not in sys.path:
-            sys.path += [lib_path]
-        fpath = os.path.join(lib_path,fun_name+suffix+".so")
-        self.m = importlib.import_module(fun_name+suffix,fpath)
+ 
+        if self.lib_path:
+            if lib_path not in sys.path:
+                sys.path += [lib_path]
+            self.path = self.lib_path
+            fpath = os.path.join(lib_path,fun_name+suffix+".so")
+            self.m = importlib.import_module(fun_name+suffix,fpath)
+        else :
+            if default_dir() not in sys.path:
+                sys.path += [default_dir()]
+            self.path = default_dir()
+            fpath = os.path.join(default_dir(),fun_name+suffix+".so")
+            self.m = importlib.import_module(fun_name+suffix,fpath)
+        print("The path where .so goes",self.path)
+
 
     def __call__(self,*args):
         self.m.load()
         if is_jupyter:
             try:
-                outfile = os.path.join(self.lib_path,"out.txt")
+                outfile = os.path.join(self.path,"out.txt")
                 fd1 = open(outfile, "w")
                 save_out = os.dup(1)
                 os.close(1)
                 os.dup(fd1.fileno())
 
-                errfile = os.path.join(self.lib_path,"err.txt")
+                errfile = os.path.join(self.path,"err.txt")
                 fd2 = open(errfile, "w")
                 save_err = os.dup(2)
                 os.close(2)

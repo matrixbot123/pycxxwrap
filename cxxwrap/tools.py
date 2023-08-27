@@ -1,5 +1,30 @@
 import os,re,sys
 
+def default_dir():
+    home = os.environ["HOME"]
+    path = os.path.join(home,"tmp")
+    return path
+
+def create_dir(directory_path):
+    print("input is", directory_path)
+    if "~" in directory_path :
+        full_path = os.path.expanduser(directory_path)
+        print("tilde")
+    elif "./" in directory_path or "../" in directory_path:
+        print("absolute path ")
+        full_path = os.path.abspath(directory_path)
+
+    else:
+        print("anything else")
+        home = os.environ["HOME"]
+        full_path = os.path.join(home,directory_path)
+
+    if not os.path.exists(full_path):
+        print("Creating directory:", full_path)
+        os.makedirs(full_path)
+    else:
+        print("Directory already exists:", full_path)
+    return full_path
 
 def write_module(fname, fpath, mname):
     fpath = os.path.expanduser(fpath)

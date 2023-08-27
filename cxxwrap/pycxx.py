@@ -6,8 +6,9 @@ import inspect
 import ast
 from termcolor import colored
 from .load_function import load_func
-from .utils import get_args, write_src, fcall , prompts, create_dir
-from .tools import write_module , python_header_path, pybind11_header_path
+from .utils import get_args, write_src, fcall , prompts 
+from .tools import write_module , python_header_path, pybind11_header_path,create_dir ,default_dir
+
 
 
 python_header = python_header_path()
@@ -53,10 +54,15 @@ class py11:
             self.wrapper = wrapper
         else:
             self.wrapper = None
-        path = create_dir(self.lib_path)
-        print(path)
-        new_load_func = load_func.replace("lib_path", f'"{path}"')
-        print(new_load_func)
+        
+        if self.lib_path:
+            path = create_dir(self.lib_path)
+            new_load_func = load_func.replace("lib_path", f'"{path}"')
+        else: 
+            # set it to ~/tmp
+            create_dir("~/tmp")
+            new_load_func = load_func.replace("lib_path", f'"{os.path.expanduser("~/tmp")}"')    
+
         if len(funs_list)>0:
             fun_decls += new_load_func
             for f in funs_list:
@@ -81,7 +87,7 @@ class py11:
             base = os.path.join(str(path), fun.__name__ )
             print(base)
         else:
-            base = os.path.join("~/tmp", fun.__name__)
+            base = os.path.join(default_dir(), fun.__name__)
             print(base)
         if not os.path.exists(self.lib_path):
             path = create_dir(self.lib_path)
