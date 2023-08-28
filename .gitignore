@@ -2,3 +2,5 @@ cxxwrapper/
 __pycache__/
 build/
 cxxwrap.egg-info/
+test/
+test_*
