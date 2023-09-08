@@ -4,6 +4,7 @@ import re
 import sys
 import inspect
 import ast
+import time
 from termcolor import colored
 from .load_function import load_func
 from .utils import get_args, write_src, fcall , prompts 
@@ -32,14 +33,25 @@ def set_flags(f):
 class py11:
 
     def __init__(self, *kargs, **kwargs):
-
+        
         self.recompile = kwargs.get("recompile", False)
         self.headers = kwargs.get("headers", [])
 
-        self.module_name = kwargs.get("module_name", False)
-        self.lib_path = kwargs.get("lib_path", False)
-        self.sub_module_name = kwargs.get("sub_module_name", False)
+        self.args = kwargs.get("args",[])   
         
+        
+        self.flags = self.args.flags if hasattr(self.args,'flags') else "--std=c++17"
+        print("self.flags = ", self.flags)
+        self.module_name = self.args.module_name if hasattr(self.args,'module_name') else False
+        print("self.module_name = ", self.module_name)
+        self.lib_path = self.args.lib_path if hasattr(self.args,'lib_path') else False
+        print("self.lib_path = ", self.lib_path)
+        self.create_nametype = self.args.create_nametype.type_names 
+        if self.create_nametype == {}:
+            print("No Types initialized")
+
+        #TODO: implement sub_module_name
+
         fun_decls = ""
         fun_calls = ""
         funs_list = []
@@ -79,6 +91,7 @@ class py11:
     def __call__(self, fun):
         # Naming the filename and libname
         # function name module name and its path 
+        print("function name is :", fun.__name__)
         print(self.lib_path)
         if self.lib_path:
             print(self.lib_path)
@@ -94,11 +107,7 @@ class py11:
             os.makedirs(os.path.dirname(path), exist_ok=True)
         
 
-
-        # AST (Abstract Syntax Tree) Parsing 
-        src = inspect.getsource(fun)
-        tree = ast.parse(src)
-        args, oargs, cargs, rettype = get_args(tree)
+        args, oargs, cargs, rettype = get_args(fun,self.create_nametype)
         
         code = ""
         fname = base+'.cpp'
@@ -165,6 +174,7 @@ class py11:
 
     def __execute_compilation(self, base, fname,fun,suffix):
         prompts("started executing compilation ....")
+        start_t = time.time()
         cmd = "c++ -Wl,--start {flags} -I{python_header} -I{pybind11_header} -rdynamic -fPIC -shared -o {base}.so {fname} -Wl,--end".format(
                     base=base, python_header=python_header, pybind11_header=pybind11_header, flags=flags, fname=fname)
 
@@ -180,10 +190,13 @@ class py11:
             if self.module_name and self.lib_path:
                 write_module(fun.__name__+suffix, self.lib_path, self.module_name)
         except Exception as e:
+            end_t = time.time()
+            print("Time elapsed = ", end_t-start_t)
             print(e)
             print("Exception raised during compilation")
             return False
-        prompts("finished executing compilation")
+        end_t = time.time()
+        prompts("finished compilation {:.2f} sec".format(end_t - start_t))
         return True
     
   

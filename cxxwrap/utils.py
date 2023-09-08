@@ -13,11 +13,6 @@ from IPython.display import Markdown, display
 from .tools import default_dir
 
 
-
-
-
-
-
 if type(sys.stdout).__module__ == 'ipykernel.iostream' and type(sys.stdout).__name__ == 'OutStream':
     is_jupyter = True
 else:
@@ -30,88 +25,63 @@ def prompts(a):
     else :
         print(a)
 
-class basic_type:
-    def __init__(self, name=None):
-        if name is not None:
-            self.full_name = name
 
+def ttran(n):
+    s = ''
+    for match in re.finditer(r'[\w\.]+|.', n):
+        s += {
+            "np.float32": "std::float32_t",
+            "np.float64": "std::float64_t",
+            "np.int64": "std::int64_t",
+            "str": "std::string",
+            "None": "void",
+            "List": "std::vector",
+            "Dict": "std::map",
+            "[": "<",
+            "]": ">"
+        }.get(match.group(0), match.group(0))
+    print("type translation" ,s)
+    return s
 
-class template_type:
-    def __init__(self, name=None):
-        if name is not None:
-            self.full_name = name
-
-    def __getitem__(self, a):
-        pass
-
-    def __getslice__(self, *a):
-        pass
-
-
-type_names = {}
-
-
-
-def create_type(name, alt=None, is_template=False):
-    global type_names
-    assert name is not None
-    if alt is not None:
-        type_names[name] = alt
-    else:
-        type_names[name] = name
-    stack = inspect.stack()
-    if 1 < len(stack):
-        index = 1
-    else:
-        index = 0
-    if is_template:
-        stack[index].frame.f_globals[name] = template_type(name)
-    else:
-        stack[index].frame.f_globals[name] = basic_type(name)
-
-create_type("svec", alt="std::vector", is_template=True)
-create_type("smap", alt="std::map", is_template=True)
-
-
-def gettype(ty):
+def gettype(ty,types):
     if ty is None:
         return "None"
     t = type(ty)
     if t == ast.Name:
-        if ty.id in type_names.keys():
-            return type_names[ty.id]
+        if ty.id in types.type_names.keys():
+            return types[ty.id]
         return ty.id
     elif t in [np.float64]:
         return str(t)
     elif t in [ast.Index, ast.NameConstant]:
-        return gettype(ty.value)
+        return gettype(ty.value,types)
     elif t in [ast.Attribute]:
-        return gettype(ty.value) + "." + gettype(ty.attr)
+        return gettype(ty.value,types) + "." + gettype(ty.attr,types)
     elif t == ast.Subscript:
-        return gettype(ty.value) + '[' + gettype(ty.slice) + ']'
+        return gettype(ty.value,types) + '[' + gettype(ty.slice,types) + ']'
     elif t == ast.Tuple:
         s = ''
         sep = ''
         for e in ty.elts:
-            s += sep + gettype(e)
+            s += sep + gettype(e,types)
             sep = ','
         return s
     elif t == ast.Call:
         if ty.func.id == "Ref":
-            return "%s&" % gettype(ty.args[0])
+            return "%s&" % gettype(ty.args[0],types)
         elif ty.func.id == "Const":
-            return "%s const" % gettype(ty.args[0])
+            return "%s const" % gettype(ty.args[0],types)
         elif ty.func.id == "Move":
-            return "%s&&" % gettype(ty.args[0])
+            return "%s&&" % gettype(ty.args[0],types)
         elif ty.func.id == "Ptr":
-            return "%s*" % gettype(ty.args[0])
+            return "%s*" % gettype(ty.args[0],types)
         else:
             s = ty.func.id + "<"
             for i in len(ty.args):
                 if i > 0:
                     s += ","
                 arg = ty.args[i]
-                s += gettype(arg)
+                s += gettype(arg,types)
             s += ">"
             return s
         
@@ -131,48 +101,34 @@ def gettype(ty):
         print(ty.args[0].s, ty.args[1].id)
         print("<<", ty.__class__.__name__, ">>", dir(ty))
         raise Exception("?")
+
+def get_args(function,types=None):
+    src = inspect.getsource(function)
+    tree = ast.parse(src)
+
+    def g_args(tree):
+        nm = tree.__class__.__name__
+        if nm in ["Module"]:
+            for k in tree.body:
+                args = g_args(k)
+                if args is not None:
+                    return args
+
+        elif nm in ["FunctionDef"]:
+            args = []
+            cargs = []
+            oargs = ""
+            for a in tree.args.args:
+                type = ttran(gettype(a.annotation,types))
+                args += [type+" "+a.arg]
+                oargs += ',py::arg("%s")' % a.arg
+                cargs += [a.arg]
+                #oargs += ','+type
+            return [",".join(args), oargs, cargs, ttran(gettype(tree.returns,types)) ]
+
+        raise Exception("In get_args() : Could not find args")
+    return g_args(tree)
     
-
-# change 1
-def ttran(n):
-    s = ''
-    for match in re.finditer(r'[\w\.]+|.', n):
-        s += {
-            "np.float32": "std::float32_t",
-            "np.float64": "std::float64_t",
-            "np.int64": "std::int64_t",
-            "str": "std::string",
-            "None": "void",
-            "List": "std::vector",
-            "Dict": "std::map",
-            "[": "<",
-            "]": ">"
-        }.get(match.group(0), match.group(0))
-    print("type translation" ,s)
-    return s
-
-def get_args(tree):
-    nm = tree.__class__.__name__
-
-    if nm in ["Module"]:
-        for k in tree.body:
-            args = get_args(k)
-            if args is not None:
-                return args
-
-    elif nm in ["FunctionDef"]:
-        args = []
-        cargs = []
-        oargs = ""
-        for a in tree.args.args:
-            type = ttran(gettype(a.annotation))
-            args += [type+" "+a.arg]
-            oargs += ',py::arg("%s")' % a.arg
-            cargs += [a.arg]
-            #oargs += ','+type
-        return [",".join(args), oargs, cargs, ttran(gettype(tree.returns)) ]
-
-    raise Exception("Could not find args")
 
 class fcall:
     def __init__(self,base,fun_name,suffix,args,rettype,lib_path):
