@@ -2,20 +2,18 @@ import os
 from subprocess import Popen, PIPE
 import re
 import sys
-import inspect
-import ast
 import time
 from termcolor import colored
 from .load_function import load_func
 from .utils import get_args, write_src, fcall , prompts 
 from .tools import write_module , python_header_path, pybind11_header_path,create_dir ,default_dir
-
+from .types import type_names, create_type
 
 
 python_header = python_header_path()
 pybind11_header = pybind11_header_path()
-print(pybind11_header)
-print(python_header)
+print("pybind11 headers path",pybind11_header)
+print("python headers path",python_header)
 flags = "-std=c++17"
 
 
@@ -46,9 +44,7 @@ class py11:
         print("self.module_name = ", self.module_name)
         self.lib_path = self.args.lib_path if hasattr(self.args,'lib_path') else False
         print("self.lib_path = ", self.lib_path)
-        self.create_nametype = self.args.create_nametype.type_names 
-        if self.create_nametype == {}:
-            print("No Types initialized")
+
 
         #TODO: implement sub_module_name
 
@@ -82,8 +78,8 @@ class py11:
                 fun_decls += f"{f.fun_name}_type_def {f.fun_name} = nullptr;\n"
                 fun_calls += f'{f.fun_name} = ({f.fun_name}_type_def)load_func("{f.fun_name}");\n'
 
-        print("fun_decls = ", fun_decls)
-        print("fun_calls = ", fun_calls)
+        # print("fun_decls = ", fun_decls)
+        # print("fun_calls = ", fun_calls)
 
         self.fun_decls = fun_decls
         self.fun_calls = fun_calls
@@ -92,13 +88,10 @@ class py11:
         # Naming the filename and libname
         # function name module name and its path 
         print("function name is :", fun.__name__)
-        print(self.lib_path)
         if self.lib_path:
-            print(self.lib_path)
             path = create_dir(self.lib_path)
-            print(path)
             base = os.path.join(str(path), fun.__name__ )
-            print(base)
+            print("the path is :", base)
         else:
             base = os.path.join(default_dir(), fun.__name__)
             print(base)
@@ -107,7 +100,7 @@ class py11:
             os.makedirs(os.path.dirname(path), exist_ok=True)
         
 
-        args, oargs, cargs, rettype = get_args(fun,self.create_nametype)
+        args, oargs, cargs, rettype = get_args(fun)
         
         code = ""
         fname = base+'.cpp'
@@ -135,7 +128,7 @@ class py11:
             src = self._call_write_src(fun,rettype,args,oargs,cargs,suffix)
 
             with open(mname, "w") as fd:
-                print(version, file=fd)
+                print(version, file=fd)#rm
 
             with open(fname, "w") as fd:
                 fd.write(src)
@@ -173,11 +166,11 @@ class py11:
 
 
     def __execute_compilation(self, base, fname,fun,suffix):
-        prompts("started executing compilation ....")
+        print("started executing compilation ....")
         start_t = time.time()
         cmd = "c++ -Wl,--start {flags} -I{python_header} -I{pybind11_header} -rdynamic -fPIC -shared -o {base}.so {fname} -Wl,--end".format(
-                    base=base, python_header=python_header, pybind11_header=pybind11_header, flags=flags, fname=fname)
-
+                    base=base, python_header=python_header, pybind11_header=pybind11_header, flags=self.flags, fname=fname)
+        # print("cmd = ", cmd) #rm
         try:
             split_cmd = re.split(r'\s+', cmd)
             proc = Popen(split_cmd, stdout=PIPE, stderr=PIPE,universal_newlines=True)
@@ -196,7 +189,7 @@ class py11:
             print("Exception raised during compilation")
             return False
         end_t = time.time()
-        prompts("finished compilation {:.2f} sec".format(end_t - start_t))
+        print("finished compilation {:.2f} sec".format(end_t - start_t))
         return True
     
   

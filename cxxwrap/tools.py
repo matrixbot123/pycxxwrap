@@ -1,66 +1,10 @@
 import os,re,sys
-import inspect
-
-class create_nametype:
-    
-    def __init__(self):
-        self.type_names = {}
-
-    def __getitem__(self, key):
-        return self.type_names[key]
-    
-    class basic_type:
-        def __init__(self, name=None):
-            if name is not None:
-                self.full_name = name
-
-
-    class template_type:
-        def __init__(self, name=None):
-            if name is not None:
-                self.full_name = name
-
-        def __getitem__(self, a):
-            pass
-
-        def __getslice__(self, *a):
-            pass
-
-    
-    def create_type(self, name, alt=None, is_template=False):
-        assert name is not None
-        
-        if alt is not None:
-            self.type_names[name] = alt
-        else:
-            self.type_names[name] = name
-
-        stack = inspect.stack()
-        if 1 < len(stack):
-            index = 1
-        else:
-            index = 0
-        
-        if is_template:
-            stack[index][0].f_globals[name] = self.template_type(name)
-        else:
-            stack[index][0].f_globals[name] = self.basic_type(name)
-
-
 
 class set_args:
     def __init__(self, *kargs, **kwargs):
         self.flags = kwargs.get("flags", "-std=c++17")
         self.lib_path = kwargs.get("lib_path", False)
         self.module_name = kwargs.get("module_name", False)
-        # Here you are embedding the create_nametype class instance into set_args. You can access the methods and attributes using this object.
-        self.create_nametype = create_nametype()
-
-    def create_type(self, name, alt=None, is_template=False):
-        self.create_nametype.create_type(name, alt, is_template)
-    @property
-    def is_type_names_empty(self):
-        return self.create_nametype.is_empty
 
         
 def default_dir():

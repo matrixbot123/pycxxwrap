@@ -11,6 +11,7 @@ from .load_function import load_func
 from colorama import Fore, Style, init
 from IPython.display import Markdown, display
 from .tools import default_dir
+from .types import type_names
 
 
 if type(sys.stdout).__module__ == 'ipykernel.iostream' and type(sys.stdout).__name__ == 'OutStream':
@@ -43,45 +44,45 @@ def ttran(n):
     print("type translation" ,s)
     return s
 
-def gettype(ty,types):
+def gettype(ty):
     if ty is None:
         return "None"
     t = type(ty)
     if t == ast.Name:
-        if ty.id in types.type_names.keys():
-            return types[ty.id]
+        if ty.id in type_names.keys():
+            return type_names[ty.id]
         return ty.id
     elif t in [np.float64]:
         return str(t)
     elif t in [ast.Index, ast.NameConstant]:
-        return gettype(ty.value,types)
+        return gettype(ty.value)
     elif t in [ast.Attribute]:
-        return gettype(ty.value,types) + "." + gettype(ty.attr,types)
+        return gettype(ty.value) + "." + gettype(ty.attr)
     elif t == ast.Subscript:
-        return gettype(ty.value,types) + '[' + gettype(ty.slice,types) + ']'
+        return gettype(ty.value) + '[' + gettype(ty.slice) + ']'
     elif t == ast.Tuple:
         s = ''
         sep = ''
         for e in ty.elts:
-            s += sep + gettype(e,types)
+            s += sep + gettype(e)
             sep = ','
         return s
     elif t == ast.Call:
         if ty.func.id == "Ref":
-            return "%s&" % gettype(ty.args[0],types)
+            return "%s&" % gettype(ty.args[0])
         elif ty.func.id == "Const":
-            return "%s const" % gettype(ty.args[0],types)
+            return "%s const" % gettype(ty.args[0])
         elif ty.func.id == "Move":
-            return "%s&&" % gettype(ty.args[0],types)
+            return "%s&&" % gettype(ty.args[0])
         elif ty.func.id == "Ptr":
-            return "%s*" % gettype(ty.args[0],types)
+            return "%s*" % gettype(ty.args[0])
         else:
             s = ty.func.id + "<"
             for i in len(ty.args):
                 if i > 0:
                     s += ","
                 arg = ty.args[i]
-                s += gettype(arg,types)
+                s += gettype(arg)
             s += ">"
             return s
         
@@ -102,7 +103,7 @@ def gettype(ty,types):
         print("<<", ty.__class__.__name__, ">>", dir(ty))
         raise Exception("?")
 
-def get_args(function,types=None):
+def get_args(function):
     src = inspect.getsource(function)
     tree = ast.parse(src)
 
@@ -119,12 +120,12 @@ def get_args(function,types=None):
             cargs = []
             oargs = ""
             for a in tree.args.args:
-                type = ttran(gettype(a.annotation,types))
+                type = ttran(gettype(a.annotation))
                 args += [type+" "+a.arg]
                 oargs += ',py::arg("%s")' % a.arg
                 cargs += [a.arg]
                 #oargs += ','+type
-            return [",".join(args), oargs, cargs, ttran(gettype(tree.returns,types)) ]
+            return [",".join(args), oargs, cargs, ttran(gettype(tree.returns)) ]
 
         raise Exception("In get_args() : Could not find args")
     return g_args(tree)
