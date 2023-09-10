@@ -47,22 +47,32 @@ def {fun}(*args):
     fun.load()
     return fun.call(*args)
     '''
-    print(fname)
+
+    print("function  is :", fun_def)
     pattern = fr'{fun}_v\d+'
     # Check if module file exists
     if os.path.isfile(mfile_path):
         with open(mfile_path, 'r') as f:
             file_content = f.read()
             # Use regex to match function definition
-            
-            updated_content = re.sub(r'importlib\.import_module\("{}.*?"'.format(pattern),
-                                    f'importlib.import_module("{fname}"',
-                                    file_content,
-                                    flags=re.DOTALL)
+            if re.search(fr'def {fun}\(.*?\):', file_content):
+                print("function already exists")
+                return
+            elif re.search(fr'def {fun}_v\d+\(.*?\):', file_content):
+                # If function with same name but different version exists, update the import statement
+                updated_content = re.sub(r'importlib\.import_module\("{}.*?"'.format(pattern),
+                                        f'importlib.import_module("{fname}"',
+                                        file_content,
+                                        flags=re.DOTALL)
+                print("function was updated")
+            else:
+                # If function with same name does not exist, append the function definition
+                updated_content = file_content + fun_def
 
             with open(mfile_path, 'w') as file:
                 file.write(updated_content)
-            print("function was updated")
+                print("function was updated")
+            
             return
 
     # If module file does not exist, it's created with the import statement at the top
@@ -71,8 +81,13 @@ def {fun}(*args):
     with open(mfile_path, 'a' if os.path.exists(mfile_path) else 'w') as f:
         if not exists:
             f.write("import importlib\n")
+            f.write("import sys\n")
+            f.write(f"module_directory = \"{fpath}\"\n")
+            f.write("sys.path.append(module_directory)\n\n")
         f.write(fun_def)
 
+#TODO: make this function
+def make_installable(fpath, mname):pass 
 
 def python_header_path():
     python_version = f"{sys.version_info.major}.{sys.version_info.minor}"

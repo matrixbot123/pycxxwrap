@@ -5,9 +5,9 @@ import sys
 import time
 from termcolor import colored
 from .load_function import load_func
-from .utils import get_args, write_src, fcall , prompts 
+from .utils import get_args, write_src, fcall 
 from .tools import write_module , python_header_path, pybind11_header_path,create_dir ,default_dir
-from .types import type_names, create_type
+
 
 
 python_header = python_header_path()
@@ -99,7 +99,6 @@ class py11:
             path = create_dir(self.lib_path)
             os.makedirs(os.path.dirname(path), exist_ok=True)
         
-
         args, oargs, cargs, rettype = get_args(fun)
         
         code = ""
@@ -115,6 +114,7 @@ class py11:
 
         if os.path.exists(fname):
             code = open(fname).read()
+            print(code)
         
         # Recompile case
         if code != src or self.recompile or not os.path.exists(libname):

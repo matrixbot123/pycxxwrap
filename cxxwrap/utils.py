@@ -19,14 +19,6 @@ if type(sys.stdout).__module__ == 'ipykernel.iostream' and type(sys.stdout).__na
 else:
     is_jupyter = False 
 
-init()
-def prompts(a):
-    if is_jupyter:
-        display(Markdown(f'<span style="color:red">{a}</span>'))
-    else :
-        print(a)
-
-
 def ttran(n):
     s = ''
     for match in re.finditer(r'[\w\.]+|.', n):
