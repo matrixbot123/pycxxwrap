@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="cxxwrap",
+    name="pycxxwrap",
     version="0.0.1",
     description="Tool used to warpping CXX code in python",
     long_description=open("README.md", "r").read(),
