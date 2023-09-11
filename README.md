@@ -1,7 +1,7 @@
 # PyCxxwrap
-This Package aims to help bring any CXX library functionality to python . This is created becasue some libraries are not directly compatible with pybind11 (like HPX ) due to GIL . 
+This package aims to facilitate the integration of CXX library functionality into Python. It was created because some libraries are not directly compatible with pybind11, such as HPX, due to the Global Interpreter Lock (GIL).
 
-So , the main goal of this project is an easy interface to CXX libraries in python without any overhead. But ease come some drawbacks , one of those is not having support for class and struct from CXX to python .This is not a big problem as most of the CXX libraries are just a bunch of functions and not classes or structs .
+The main goal of this project is to provide an easy interface to CXX libraries in Python without introducing any significant overhead. However, there are some drawbacks, one of which is the lack of support for converting CXX classes and structs to Python. This limitation may not be a significant issue since most CXX libraries primarily consist of functions rather than classes or structs.
 
 ## Installation
 Currently the package is not in pypi you just need to clone the repo , and install it using pip then it is ready to use
