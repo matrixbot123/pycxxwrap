@@ -23,11 +23,6 @@ else:
     is_jupyter = False
 
 
-def set_flags(f):
-    global flags
-    flags = f   
-
-
 class py11:
 
     def __init__(self, *kargs, **kwargs):

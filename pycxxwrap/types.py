@@ -9,14 +9,14 @@ class basic_type:
 
 
 class template_type:
-    def __init__( self, name=None):
+    def __init__(self, name=None):
         if name is not None:
             self.full_name = name
 
-    def __getitem__( a):
+    def __getitem__(self, a):
         pass
 
-    def __getslice__( *a):
+    def __getslice__(self, *a):
         pass
 
 
