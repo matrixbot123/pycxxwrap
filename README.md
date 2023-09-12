@@ -73,7 +73,9 @@ int main()
     std::cout << "f=" << f.get() << std::endl;
 }
 ``` 
-For more details on how the above code works please refer to the Docs.
+For more details on how the above code works please refer to the [Docs](./Docs).
 
 <!-- to do in future -->
-## 
+## Future Plans
+1. Add proper support for CXX classes and structs
+2. Update or rewrite [run_hpx](./run_hpx.cpp) 
