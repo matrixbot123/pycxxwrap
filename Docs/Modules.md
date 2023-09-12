@@ -59,6 +59,16 @@ def hpx_wrapper(f : func)->None:
     """
 ```
 Above the location where all .so files will be store is `./hello_hpx` and the module name is `hpx_example` and the flags are passed to the compiler.
+* prepare_python_package\
+This function is used to prepare the python package to be installed.(adding default `setup.py` and `__init__.py` files). 
+> Parameters
+> * `path`: The path where the package was initially created.you can either pass the args or the path itself.NOTE : It is recommended to use the args created by `set_args` function.
+
+Checkout the [Make a Module](../Examples/make_modules.ipynb) for more details.
+ ### > usage
+ ```python
+
+
 
 ## types
 * create_type \

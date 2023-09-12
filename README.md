@@ -2,7 +2,7 @@
 This package aims to facilitate the integration of CXX library functionality into Python. It was created because some libraries are not directly compatible with pybind11, such as HPX, due to the Global Interpreter Lock (GIL).
 
 The main goal of this project is to provide an easy interface to CXX libraries in Python without introducing any significant overhead. However, there are some drawbacks, one of which is the lack of support for converting CXX classes and structs to Python. This limitation may not be a significant issue since most CXX libraries primarily consist of functions rather than classes or structs.
-
+It Currently only supports Linux and MacOs. Windows support will be added in future.
 ## Installation
 Currently the package is not in pypi you just need to clone the repo , and install it using pip then it is ready to use
 ```bash

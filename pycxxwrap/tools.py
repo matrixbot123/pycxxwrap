@@ -1,4 +1,5 @@
 import os,re,sys
+import shutil
 
 class set_args:
     def __init__(self, *kargs, **kwargs):
@@ -87,7 +88,40 @@ def {fun}(*args):
         f.write(fun_def)
 
 #TODO: make this function
-def make_installable(fpath, mname):pass 
+def prepare_python_package(args):
+    if not args.lib_path:
+        lib_path = args
+    else:
+        lib_path = args.lib_path
+    default_mod_loc = os.path.expanduser("~/pycxx_modules")
+    final_folder = os.path.basename(os.path.normpath(lib_path))
+    super_folder = final_folder+"_m"
+    new_mod_loc = os.path.join(default_mod_loc,super_folder,final_folder)
+
+    os.makedirs(new_mod_loc,exist_ok=True)
+    shutil.copytree(lib_path,new_mod_loc,dirs_exist_ok=True)
+
+    # Now adding __init__.py in new_mod_loc 
+    # and setup.py 
+    init_file = os.path.join(new_mod_loc,"__init__.py") 
+    open(init_file,"w+").close()
+
+    setup_file = os.path.join(default_mod_loc,super_folder,"setup.py")
+    default_setup = f"""
+from setuptools import setup, find_packages
+
+setup(
+    name='{final_folder}',
+    version='0.0.1',
+    license='MIT',
+    python_requires=">=3.10",
+    packages=find_packages()
+)
+"""
+    with open(setup_file,"w+") as f:
+        f.write(default_setup)
+    print("setup complete at "+new_mod_loc+" Just `pip install .` from folder "+super_folder+" to install the module")
+
 
 def python_header_path():
     python_version = f"{sys.version_info.major}.{sys.version_info.minor}"
